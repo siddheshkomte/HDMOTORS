@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard - HD Motors</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --accent-color: #e63946;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --card-bg: #1a1a1a;
+            --input-bg: #222;
+            --border-color: #2a2a2a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, .brand { font-family: 'Orbitron', sans-serif; text-transform: uppercase; }
+
+        /* ── HEADER ── */
+        header {
+            background: rgba(13,13,13,0.97);
+            padding: 18px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--accent-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand { font-size: 1.4rem; font-weight: 900; color: var(--accent-color); }
+
+        .header-right { display: flex; align-items: center; gap: 16px; }
+
+        .owner-name {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            border-radius: 3px;
+            letter-spacing: 1px;
+        }
+        .logout-btn:hover { background: var(--accent-color); color: #000; }
+
+        /* ── MAIN CONTAINER ── */
+        .dashboard-container { max-width: 1300px; margin: 36px auto; padding: 0 5%; }
+
+        /* ── STAT CARDS ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px; height: 100%;
+            background: var(--accent-color);
+        }
+
+        .stat-card.green::before { background: #10b981; }
+        .stat-card.amber::before { background: #f59e0b; }
+        .stat-card.blue::before  { background: #3b82f6; }
+
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+        .stat-value { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; font-weight: 700; color: #fff; }
+
+        /* ── TOOLBAR ── */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .toolbar h1 { font-size: 1.6rem; flex: 1; min-width: 200px; }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--input-bg);
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0 12px;
+            gap: 8px;
+            flex: 1;
+            min-width: 200px;
+            max-width: 320px;
+        }
+
+        .search-box input {
+            background: none;
+            border: none;
+            color: #fff;
+            padding: 10px 0;
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.9rem;
+            width: 100%;
+            outline: none;
+        }
+
+        .search-box svg { color: var(--text-muted); flex-shrink: 0; }
+
+        .filter-select {
+            background: var(--input-bg);
+            border: 1px solid #444;
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .filter-select:focus { border-color: var(--accent-color); }
+
+        /* ── TABLE ── */
+        .table-wrapper {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; min-width: 900px; }
+
+        th, td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); }
+
+        th {
+            background: #111;
+            color: var(--accent-color);
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+
+        td { color: var(--text-muted); font-size: 0.9rem; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #1f1f1f; color: #fff; transition: background 0.15s; }
+
+        .name-cell { color: #fff !important; font-weight: 500; }
+        .service-cell { color: var(--accent-color) !important; font-weight: bold; }
+        .payment-cell { color: #10b981 !important; font-size: 0.8rem; }
+
+        /* ── BADGES ── */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .status-badge.pending   { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid #f59e0b; }
+        .status-badge.confirmed { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid #10b981; }
+        .status-badge.cancelled { background: rgba(230,57,70,0.15);  color: #e63946; border: 1px solid #e63946; }
+        .status-badge.completed { background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid #3b82f6; }
+
+        /* ── ACTION BUTTONS ── */
+        .actions { display: flex; gap: 8px; align-items: center; }
+
+        .action-btn {
+            border: none;
+            border-radius: 3px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .btn-status {
+            background: rgba(59,130,246,0.15);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+        .btn-status:hover { background: #3b82f6; color: #000; }
+
+        .btn-delete {
+            background: rgba(230,57,70,0.12);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+        }
+        .btn-delete:hover { background: var(--accent-color); color: #000; }
+
+        /* ── STATUS MODAL ── */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 500;
+            visibility: hidden; opacity: 0;
+            transition: all 0.25s;
+        }
+        .modal-overlay.visible { visibility: visible; opacity: 1; }
+
+        .modal-box {
+            background: var(--card-bg);
+            border: 1px solid var(--accent-color);
+            border-radius: 6px;
+            padding: 32px;
+            width: 90%;
+            max-width: 420px;
+            position: relative;
+        }
+
+        .modal-box h3 {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+        }
+
+        .modal-close {
+            position: absolute; top: 14px; right: 16px;
+            color: var(--text-muted); cursor: pointer;
+            font-size: 1.2rem; background: none; border: none;
+            transition: color 0.2s;
+        }
+        .modal-close:hover { color: #fff; }
+
+        .status-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+        .status-option {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .status-option:hover { border-color: #666; background: #222; }
+        .status-option.selected { border-color: var(--accent-color); background: rgba(230,57,70,0.08); }
+        .status-option input[type="radio"] { accent-color: var(--accent-color); }
+        .status-option label { cursor: pointer; font-size: 0.9rem; }
+
+        .modal-actions { display: flex; gap: 10px; }
+
+        .btn-modal-save {
+            flex: 1;
+            padding: 12px;
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background 0.2s;
+            letter-spacing: 1px;
+        }
+        .btn-modal-save:hover { background: #c92a36; }
+
+        .btn-modal-cancel {
+            flex: 1;
+            padding: 12px;
+            background: #333;
+            color: #fff;
+            border: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+        .btn-modal-cancel:hover { background: #444; }
+
+        /* ── CONFIRM DELETE MODAL ── */
+        .confirm-text { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.7; }
+        .confirm-text span { color: #fff; font-weight: 500; }
+
+        /* ── EMPTY / LOADING STATES ── */
+        .state-row td { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.95rem; }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed;
+            bottom: 28px; right: 28px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-left: 3px solid #10b981;
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            z-index: 9999;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+        #toast.show { transform: translateY(0); opacity: 1; }
+        #toast.error { border-left-color: var(--accent-color); }
+
+        /* ── FOOTER ── */
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 60px;
+        }
+
+        @media (max-width: 600px) {
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .search-box { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">HD Motors — Owner Area</div>
+    <div class="header-right">
+        <span class="owner-name" id="owner-email"></span>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+</header>
+
+<main class="dashboard-container">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Bookings</div>
+            <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card amber">
+            <div class="stat-label">Pending</div>
+            <div class="stat-value" id="stat-pending">—</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-label">Confirmed</div>
+            <div class="stat-value" id="stat-confirmed">—</div>
+        </div>
+        <div class="stat-card blue">
+            <div class="stat-label">Completed</div>
+            <div class="stat-value" id="stat-completed">—</div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <h1>Booking Requests</h1>
+
+        <div class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Search name, email, vehicle...">
+        </div>
+
+        <select class="filter-select" id="statusFilter">
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+        </select>
+
+        <select class="filter-select" id="serviceFilter">
+            <option value="">All Services</option>
+            <option value="Denting">Denting</option>
+            <option value="Painting">Painting</option>
+            <option value="Engine Tuning">Engine Tuning</option>
+            <option value="Performance Mods">Performance Mods</option>
+        </select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Vehicle</th>
+                    <th>Service</th>
+                    <th>Service Date</th>
+                    <th>Payment</th>
+                    <th>Date Submitted</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="bookings-tbody">
+                <tr class="state-row"><td colspan="9">Loading data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 12px;" id="result-count"></p>
+
+</main>
+
+<footer>HD Motors Owner Dashboard &mdash; Internal Use Only &copy; 2024</footer>
+
+<!-- Status Update Modal -->
+<div class="modal-overlay" id="statusModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('statusModal')">✕</button>
+        <h3>Update Booking Status</h3>
+        <div class="status-options" id="statusOptions">
+            <label class="status-option" onclick="selectStatus(this, 'Pending')">
+                <input type="radio" name="statusPick" value="Pending"> <span>Pending</span>
+                <span class="status-badge pending" style="margin-left:auto;">Pending</span>
+            </label>
+            <label class="status-option" onclick="selectStatus(this, 'Confirmed')">
+                <input type="radio" name="statusPick" value="Confirmed"> <span>Confirmed</span>
+                <span class="status-badge confirmed" style="margin-left:auto;">Confirmed</span>
+            </label>
+            <label class="status-option" onclick="selectStatus(this, 'Completed')">
+                <input type="radio" name="statusPick" value="Completed"> <span>Completed</span>
+                <span class="status-badge completed" style="margin-left:auto;">Completed</span>
+            </label>
+            <label class="status-option" onclick="selectStatus(this, 'Cancelled')">
+                <input type="radio" name="statusPick" value="Cancelled"> <span>Cancelled</span>
+                <span class="status-badge cancelled" style="margin-left:auto;">Cancelled</span>
+            </label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeModal('statusModal')">Cancel</button>
+            <button class="btn-modal-save" onclick="saveStatus()">Save Status</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
+        <h3>Confirm Delete</h3>
+        <p class="confirm-text">
+            You are about to permanently delete the booking for <span id="deleteBookingName">this customer</span>.
+            This action <span>cannot be undone.</span>
+        </p>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+            <button class="btn-modal-save" style="background:#e63946;" onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script type="module">
+    import { initializeApp }     from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, orderBy, query }
+                                  from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut }
+                                  from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey:            "AIzaSyCmnchwnfxmGXIKqo9lzmxMVPJS5O6KolU",
+        authDomain:        "hd-motord.firebaseapp.com",
+        projectId:         "hd-motord",
+        storageBucket:     "hd-motord.firebasestorage.app",
+        messagingSenderId: "652034677678",
+        appId:             "1:652034677678:web:3f9145a47891eda1b3463f"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const db   = getFirestore(app);
+    const auth = getAuth(app);
+
+    // ── State ──
+    let allBookings     = [];
+    let currentEditId   = null;
+    let currentDeleteId = null;
+    let selectedStatus  = null;
+
+    // ── Auth guard ──
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            document.getElementById('owner-email').textContent = user.email;
+            fetchBookings();
+        } else {
+            alert('Unauthorized Access');
+            window.location.href = 'booking.html';
+        }
+    });
+
+    window.handleLogout = async () => {
+        await signOut(auth);
+        window.location.href = 'booking.html';
+    };
+
+    // ── Fetch ──
+    async function fetchBookings() {
+        try {
+            let snap;
+            try {
+                const q = query(collection(db, "bookings"), orderBy("timestamp", "desc"));
+                snap = await getDocs(q);
+            } catch {
+                snap = await getDocs(collection(db, "bookings"));
+            }
+
+            allBookings = [];
+            snap.forEach(d => allBookings.push({ id: d.id, ...d.data() }));
+            allBookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            updateStats();
+            renderTable(allBookings);
+        } catch (err) {
+            console.error(err);
+            document.getElementById('bookings-tbody').innerHTML =
+                '<tr class="state-row"><td colspan="9">Failed to load bookings. Check Firestore permissions.</td></tr>';
+        }
+    }
+
+    function updateStats() {
+        const count = status => allBookings.filter(b => (b.status || 'Pending').toLowerCase() === status).length;
+        document.getElementById('stat-total').textContent     = allBookings.length;
+        document.getElementById('stat-pending').textContent   = count('pending');
+        document.getElementById('stat-confirmed').textContent = count('confirmed');
+        document.getElementById('stat-completed').textContent = count('completed');
+    }
+
+    function renderTable(bookings) {
+        const tbody = document.getElementById('bookings-tbody');
+        document.getElementById('result-count').textContent =
+            `Showing ${bookings.length} of ${allBookings.length} bookings`;
+
+        if (!bookings.length) {
+            tbody.innerHTML = '<tr class="state-row"><td colspan="9">No bookings match your filters.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = bookings.map(b => {
+            const date    = b.timestamp ? new Date(b.timestamp).toLocaleString() : 'N/A';
+            const status  = b.status || 'Pending';
+            const payment = b.paymentStatus || 'N/A';
+            const preferredDate = b.preferredDate ? new Date(b.preferredDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+            return `<tr>
+                <td>#${b.id.substring(0, 8).toUpperCase()}</td>
+                <td class="name-cell">${b.name || '—'}</td>
+                <td><a href="mailto:${b.email}" style="color:var(--text-muted);text-decoration:none;"
+                    onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''">${b.email || '—'}</a></td>
+                <td>${b.vehicle || '—'}</td>
+                <td class="service-cell">${b.service || '—'}</td>
+                <td style="color: #fff; font-weight: 500;">${preferredDate}</td>
+                <td class="payment-cell">${payment}</td>
+                <td>${date}</td>
+                <td><span class="status-badge ${status.toLowerCase()}">${status}</span></td>
+                <td>
+                    <div class="actions">
+                        <button class="action-btn btn-status" onclick="openStatusModal('${b.id}','${status}')">Status</button>
+                        <button class="action-btn btn-delete" onclick="openDeleteModal('${b.id}','${b.name}')">Delete</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ── Filters ──
+    function applyFilters() {
+        const search  = document.getElementById('searchInput').value.toLowerCase();
+        const status  = document.getElementById('statusFilter').value;
+        const service = document.getElementById('serviceFilter').value;
+
+        const filtered = allBookings.filter(b => {
+            const matchSearch = !search ||
+                (b.name   || '').toLowerCase().includes(search) ||
+                (b.email  || '').toLowerCase().includes(search) ||
+                (b.vehicle|| '').toLowerCase().includes(search);
+            const matchStatus  = !status  || (b.status || 'Pending') === status;
+            const matchService = !service || b.service === service;
+            return matchSearch && matchStatus && matchService;
+        });
+
+        renderTable(filtered);
+    }
+
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+    document.getElementById('serviceFilter').addEventListener('change', applyFilters);
+
+    // ── Status modal ──
+    window.openStatusModal = (id, currentStatus) => {
+        currentEditId  = id;
+        selectedStatus = currentStatus;
+
+        document.querySelectorAll('.status-option').forEach(opt => {
+            opt.classList.remove('selected');
+            const radio = opt.querySelector('input[type="radio"]');
+            if (radio.value === currentStatus) {
+                opt.classList.add('selected');
+                radio.checked = true;
+            }
+        });
+
+        document.getElementById('statusModal').classList.add('visible');
+    };
+
+    window.selectStatus = (el, val) => {
+        document.querySelectorAll('.status-option').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedStatus = val;
+    };
+
+    window.saveStatus = async () => {
+        if (!currentEditId || !selectedStatus) return;
+        try {
+            await updateDoc(doc(db, "bookings", currentEditId), { status: selectedStatus });
+            const b = allBookings.find(x => x.id === currentEditId);
+            if (b) b.status = selectedStatus;
+            updateStats();
+            applyFilters();
+            closeModal('statusModal');
+            showToast(`Status updated to "${selectedStatus}"`, false);
+        } catch (err) {
+            showToast('Error updating status: ' + err.message, true);
+        }
+    };
+
+    // ── Delete modal ──
+    window.openDeleteModal = (id, name) => {
+        currentDeleteId = id;
+        document.getElementById('deleteBookingName').textContent = name || 'this customer';
+        document.getElementById('deleteModal').classList.add('visible');
+    };
+
+    window.confirmDelete = async () => {
+        if (!currentDeleteId) return;
+        try {
+            await deleteDoc(doc(db, "bookings", currentDeleteId));
+            allBookings = allBookings.filter(b => b.id !== currentDeleteId);
+            updateStats();
+            applyFilters();
+            closeModal('deleteModal');
+            showToast('Booking deleted successfully', false);
+        } catch (err) {
+            showToast('Error deleting booking: ' + err.message, true);
+        }
+    };
+
+    // ── Helpers ──
+    window.closeModal = id => document.getElementById(id).classList.remove('visible');
+
+    function showToast(msg, isError = false) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'show' + (isError ? ' error' : '');
+        setTimeout(() => { t.className = ''; }, 3200);
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay) overlay.classList.remove('visible');
+        });
+    });
+</script>
+
+</body>
+</html>

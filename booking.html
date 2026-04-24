@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking - HD Motors</title>
+    <meta name="description" content="Book your vehicle service at HD Motors. Secure your slot with Razorpay payment.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Razorpay Checkout SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <!-- EmailJS SDK for auto-send receipts -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --accent-color: #e63946;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --card-bg: #1a1a1a;
+            --input-bg: #222;
+            --success: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, .brand { font-family: 'Orbitron', sans-serif; text-transform: uppercase; }
+
+        /* ── Header ── */
+        header {
+            background: rgba(13, 13, 13, 0.95);
+            padding: 20px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            backdrop-filter: blur(10px);
+        }
+        .brand { font-size: 1.8rem; font-weight: 900; color: var(--accent-color); text-decoration: none; }
+        nav { display: flex; gap: 20px; }
+        nav a { color: var(--text-main); text-decoration: none; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; transition: color 0.3s ease; position: relative; }
+        nav a:hover, nav a.active { color: var(--accent-color); }
+        nav a.active::after { content: ''; position: absolute; bottom: -5px; left: 0; width: 100%; height: 2px; background: var(--accent-color); }
+        .menu-toggle { display: none; cursor: pointer; font-size: 1.5rem; color: var(--accent-color); }
+
+        /* ── Booking Container ── */
+        .booking-container { max-width: 900px; margin: 60px auto; padding: 0 5%; width: 100%; }
+        .booking-header { text-align: center; margin-bottom: 40px; }
+        .booking-header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .booking-header p { color: var(--text-muted); }
+
+        /* ── Service Price Badges ── */
+        .service-prices {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+        .price-badge {
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            transition: border-color 0.3s;
+        }
+        .price-badge strong { color: var(--accent-color); display: block; font-family: 'Orbitron', sans-serif; font-size: 0.7rem; margin-bottom: 2px; }
+
+        /* ── Form ── */
+        .form-wrapper { background: var(--card-bg); padding: 40px; border: 1px solid #333; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        .section-title { font-size: 1.1rem; color: var(--accent-color); margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .form-group { margin-bottom: 20px; }
+        .form-row { display: flex; gap: 20px; flex-wrap: wrap; }
+        .form-row .form-group { flex: 1; min-width: 200px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-muted); font-weight: 700; }
+        input, select {
+            width: 100%; padding: 12px 15px;
+            background: var(--input-bg); border: 1px solid #444;
+            color: #fff; border-radius: 4px;
+            font-family: 'Roboto', sans-serif;
+            transition: border-color 0.3s ease;
+            font-size: 0.95rem;
+        }
+        input[type="date"] {
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            position: relative;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.6) sepia(1) saturate(5) hue-rotate(-10deg);
+            cursor: pointer;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent-color); }
+        select option { background: #222; }
+
+        /* ── Amount Display ── */
+        .amount-display {
+            background: linear-gradient(135deg, rgba(230,57,70,0.15), rgba(230,57,70,0.05));
+            border: 1px solid rgba(230,57,70,0.4);
+            border-radius: 6px;
+            padding: 18px 22px;
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .amount-display .label { color: var(--text-muted); font-size: 0.9rem; }
+        .amount-display .price { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; color: var(--accent-color); font-weight: 700; }
+        .amount-display .gst { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+
+        /* ── Buttons ── */
+        .btn-submit {
+            display: block; width: 100%; padding: 16px;
+            background-color: var(--accent-color); color: #000;
+            border: none; font-family: 'Orbitron', sans-serif;
+            font-size: 1rem; font-weight: 700; text-transform: uppercase;
+            cursor: pointer; transition: all 0.3s ease;
+            margin-top: 20px; letter-spacing: 1px; border-radius: 4px;
+        }
+        .btn-submit:hover { background-color: #c92a36; box-shadow: 0 0 20px rgba(230,57,70,0.5); transform: translateY(-1px); }
+        .btn-alt { background: #2a2a2a !important; color: #fff !important; }
+        .btn-alt:hover { background: #333 !important; box-shadow: none !important; }
+        .btn-row { display: flex; gap: 12px; }
+        .btn-row .btn-submit { margin-top: 20px; }
+
+        /* ── Razorpay Note ── */
+        .razorpay-note {
+            display: flex; align-items: center; gap: 8px;
+            color: var(--text-muted); font-size: 0.8rem; margin-top: 14px;
+            padding: 10px 14px; background: #0f0f0f; border-radius: 4px;
+            border: 1px solid #1e1e1e;
+        }
+        .razorpay-note img { height: 18px; opacity: 0.7; }
+
+        /* ── Overlay ── */
+        #processing-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(13,13,13,0.92); display: flex;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 4000; visibility: hidden; opacity: 0; transition: opacity 0.3s ease;
+            backdrop-filter: blur(6px);
+        }
+        #processing-overlay.visible { visibility: visible; opacity: 1; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #333; border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .processing-text { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; color: var(--accent-color); }
+
+        /* ── Receipt Modal ── */
+        #receipt-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: flex;
+            justify-content: center; align-items: center;
+            z-index: 5000; visibility: hidden; opacity: 0;
+            transition: all 0.4s ease; backdrop-filter: blur(8px);
+        }
+        #receipt-modal.visible { visibility: visible; opacity: 1; }
+
+        .receipt-box {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 520px;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+            transform: scale(0.9);
+            transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #receipt-modal.visible .receipt-box { transform: scale(1); }
+
+        .receipt-header {
+            background: linear-gradient(135deg, #e63946, #c92a36);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        .receipt-checkmark {
+            width: 64px; height: 64px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%; display: flex;
+            justify-content: center; align-items: center;
+            margin: 0 auto 16px;
+            font-size: 2rem;
+            animation: pop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.3s both;
+        }
+        @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+        .receipt-header h2 { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: #fff; margin-bottom: 4px; }
+        .receipt-header p { color: rgba(255,255,255,0.8); font-size: 0.85rem; }
+
+        .receipt-body { padding: 28px 30px; }
+
+        .receipt-id {
+            background: #0d0d0d;
+            border: 1px dashed #333;
+            border-radius: 6px;
+            padding: 12px 16px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .receipt-id .id-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+        .receipt-id .id-value { font-family: 'Orbitron', sans-serif; font-size: 0.95rem; color: var(--accent-color); letter-spacing: 1px; }
+
+        .receipt-row {
+            display: flex; justify-content: space-between;
+            padding: 10px 0; border-bottom: 1px solid #1e1e1e;
+            font-size: 0.9rem;
+        }
+        .receipt-row:last-child { border-bottom: none; }
+        .receipt-row .r-label { color: var(--text-muted); }
+        .receipt-row .r-value { color: var(--text-main); font-weight: 600; text-align: right; max-width: 60%; }
+        .receipt-row.total { margin-top: 8px; }
+        .receipt-row.total .r-label { font-family: 'Orbitron', sans-serif; font-size: 0.85rem; color: var(--text-main); }
+        .receipt-row.total .r-value { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: var(--success); }
+
+        .receipt-status {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4);
+            color: var(--success); padding: 3px 10px; border-radius: 20px; font-size: 0.8rem;
+        }
+        .receipt-status::before { content: '●'; font-size: 0.6rem; }
+
+        .receipt-actions { padding: 0 30px 28px; display: flex; gap: 12px; }
+        .btn-receipt {
+            flex: 1; padding: 13px; border-radius: 4px;
+            font-family: 'Orbitron', sans-serif; font-size: 0.75rem;
+            font-weight: 700; text-transform: uppercase; cursor: pointer;
+            border: none; transition: all 0.3s ease; letter-spacing: 0.5px;
+        }
+        .btn-receipt-print { background: var(--accent-color); color: #000; }
+        .btn-receipt-print:hover { background: #c92a36; box-shadow: 0 0 15px rgba(230,57,70,0.4); }
+        .btn-receipt-close { background: #222; color: #fff; border: 1px solid #333; }
+        .btn-receipt-close:hover { background: #2a2a2a; }
+
+        /* ── Footer ── */
+        footer { background: #000; padding: 30px 5%; text-align: center; border-top: 1px solid #333; margin-top: auto; }
+        footer p { color: var(--text-muted); font-size: 0.9rem; margin-top: 10px; }
+        .owner-link { color: var(--text-muted); cursor: pointer; text-decoration: underline; font-size: 0.8rem; }
+        .owner-link:hover { color: var(--accent-color); }
+
+        /* ── Login Modal ── */
+        #login-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 3000; visibility: hidden; opacity: 0; transition: all 0.3s ease; }
+        #login-modal.visible { visibility: visible; opacity: 1; }
+        .login-box { background: var(--card-bg); padding: 30px; border-radius: 5px; width: 90%; max-width: 400px; border: 1px solid var(--accent-color); position: relative; }
+        .close-btn { position: absolute; top: 15px; right: 15px; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; }
+
+        /* ── Print Styles ── */
+        @media print {
+            body > *:not(#receipt-modal) { display: none !important; }
+            #receipt-modal { position: static; visibility: visible; opacity: 1; background: white; }
+            .receipt-box { box-shadow: none; border: 1px solid #ccc; }
+            .receipt-actions { display: none; }
+            body { background: white; }
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; }
+            nav { display: none; width: 100%; position: absolute; top: 100%; left: 0; background: rgba(13,13,13,0.98); flex-direction: column; padding: 20px; border-bottom: 1px solid #333; }
+            nav.active { display: flex; }
+            .form-wrapper { padding: 24px 18px; }
+            .booking-header h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="index.html" class="brand">HD Motors</a>
+        <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+        <nav id="nav-menu">
+            <a href="index.html">Home</a>
+            <a href="services.html">Services</a>
+            <a href="projects.html">Projects</a>
+            <a href="booking.html" class="active">Booking</a>
+            <a href="history.html">History</a>
+        </nav>
+    </header>
+
+    <main class="booking-container">
+        <div class="booking-header">
+            <h1>Schedule &amp; Book</h1>
+            <p>Secure your slot with instant Razorpay payment — fast, safe, verified.</p>
+        </div>
+
+        <div class="form-wrapper">
+            <h3 class="section-title">Vehicle &amp; Contact Details</h3>
+
+            <!-- Service price reference -->
+            <div class="service-prices">
+                <div class="price-badge"><strong>Denting</strong>₹2,500</div>
+                <div class="price-badge"><strong>Painting</strong>₹8,000</div>
+                <div class="price-badge"><strong>Engine Tuning</strong>₹5,000</div>
+                <div class="price-badge"><strong>Performance Mods</strong>₹15,000</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" required placeholder="john@example.com">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" required placeholder="9876543210" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label for="vehicle">Vehicle Model</label>
+                    <input type="text" id="vehicle" required placeholder="2022 BMW M4">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="service">Service Type</label>
+                    <select id="service" required onchange="updateAmount()">
+                        <option value="">Select Service</option>
+                        <option value="Denting" data-price="2500">Denting — ₹2,500</option>
+                        <option value="Painting" data-price="8000">Painting — ₹8,000</option>
+                        <option value="Engine Tuning" data-price="5000">Engine Tuning — ₹5,000</option>
+                        <option value="Performance Mods" data-price="15000">Performance Mods — ₹15,000</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="preferred-date">Preferred Date</label>
+                    <input type="date" id="preferred-date" required>
+                </div>
+            </div>
+
+            <!-- Amount Display -->
+            <div class="amount-display" id="amount-display" style="display:none;">
+                <div>
+                    <div class="label">Total Payable</div>
+                    <div class="gst">Inclusive of all taxes</div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="price" id="display-amount">₹0</div>
+                </div>
+            </div>
+
+            <!-- Pay Now Button -->
+            <button type="button" id="pay-btn" class="btn-submit" onclick="initiateRazorpay()" style="display:none;">
+                ⚡ Pay &amp; Confirm Booking
+            </button>
+
+            <!-- Skip Payment -->
+            <button type="button" class="btn-submit btn-alt" onclick="handleBookingNoPayment()" style="margin-top:12px;">
+                Submit Without Payment
+            </button>
+
+            <div class="razorpay-note">
+                🔒 Payments are secure &amp; encrypted via <strong style="color:#3395ff; margin-left:4px;">Razorpay</strong>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <a href="index.html" class="brand">HD Motors</a>
+        <p>Managed by Hasan Shaikh. &copy; 2024 All Rights Reserved.</p>
+        <p><span class="owner-link" onclick="openLoginModal()">Owner Login</span></p>
+    </footer>
+
+    <!-- Processing Overlay -->
+    <div id="processing-overlay">
+        <div class="spinner"></div>
+        <div class="processing-text">Saving Booking...</div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receipt-modal">
+        <div class="receipt-box">
+            <div class="receipt-header">
+                <div class="receipt-checkmark">✓</div>
+                <h2>Booking Confirmed!</h2>
+                <p>Payment received &amp; slot secured</p>
+            </div>
+            <div class="receipt-body">
+                <div class="receipt-id">
+                    <div class="id-label">Razorpay Payment ID</div>
+                    <div class="id-value" id="receipt-payment-id">—</div>
+                </div>
+                <div class="receipt-row">
+                    <span class="r-label">Customer</span>
+                    <span class="r-value" id="receipt-name">—</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="r-label">Email</span>
+                    <span class="r-value" id="receipt-email">—</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="r-label">Phone</span>
+                    <span class="r-value" id="receipt-phone">—</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="r-label">Vehicle</span>
+                    <span class="r-value" id="receipt-vehicle">—</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="r-label">Service</span>
+                    <span class="r-value" id="receipt-service">—</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="r-label">Preferred Date</span>
+                    <span class="r-value" id="receipt-preferred-date">—</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="r-label">Booked On</span>
+                    <span class="r-value" id="receipt-date">—</span>
+                </div>
+                <div class="receipt-row">
+                    <span class="r-label">Status</span>
+                    <span class="r-value"><span class="receipt-status">Paid</span></span>
+                </div>
+                <div class="receipt-row total">
+                    <span class="r-label">Amount Paid</span>
+                    <span class="r-value" id="receipt-amount">—</span>
+                </div>
+            </div>
+            <div class="receipt-actions">
+                <button class="btn-receipt btn-receipt-print" onclick="printReceipt()">🖨️ Print Receipt</button>
+                <button class="btn-receipt btn-receipt-close" onclick="closeReceipt()">Go to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owner Login Modal -->
+    <div id="login-modal">
+        <div class="login-box">
+            <span class="close-btn" onclick="closeLoginModal()">✕</span>
+            <h2>Owner Area</h2>
+            <form id="ownerLoginForm" onsubmit="handleOwnerLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="adminEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="adminPassword" required>
+                </div>
+                <button type="submit" class="btn-submit">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmnchwnfxmGXIKqo9lzmxMVPJS5O6KolU",
+            authDomain: "hd-motord.firebaseapp.com",
+            projectId: "hd-motord",
+            storageBucket: "hd-motord.firebasestorage.app",
+            messagingSenderId: "652034677678",
+            appId: "1:652034677678:web:3f9145a47891eda1b3463f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        /* ══════════════════════════════════════════════
+           EmailJS Configuration
+           ──────────────────────────────────────────────
+           To enable auto-send email receipts:
+           1. Sign up at https://www.emailjs.com (free: 200 emails/month)
+           2. Add an Email Service (Gmail, Outlook, etc.)
+           3. Create an Email Template with these variables:
+              {{customer_name}}, {{customer_email}}, {{phone}},
+              {{vehicle}}, {{service}}, {{amount}}, {{payment_id}}, {{date}}
+           4. Replace the values below with your actual IDs
+           ══════════════════════════════════════════════ */
+        const EMAILJS_PUBLIC_KEY  = 'YOUR_EMAILJS_PUBLIC_KEY';   // e.g., 'abc123XYZ'
+        const EMAILJS_SERVICE_ID  = 'YOUR_EMAILJS_SERVICE_ID';   // e.g., 'service_hd_motors'
+        const EMAILJS_TEMPLATE_ID = 'YOUR_EMAILJS_TEMPLATE_ID';  // e.g., 'template_receipt'
+
+        // Initialize EmailJS
+        let emailjsReady = false;
+        try {
+            if (typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'YOUR_EMAILJS_PUBLIC_KEY') {
+                emailjs.init(EMAILJS_PUBLIC_KEY);
+                emailjsReady = true;
+                console.log('✅ EmailJS initialized');
+            } else if (EMAILJS_PUBLIC_KEY === 'YOUR_EMAILJS_PUBLIC_KEY') {
+                console.warn('⚠️ EmailJS not configured — email receipts disabled. Update EMAILJS keys in booking.html');
+            }
+        } catch (e) {
+            console.warn('EmailJS init error:', e);
+        }
+
+        /* ── Send Email Receipt ── */
+        async function sendEmailReceipt(bookingData) {
+            if (!emailjsReady) {
+                console.log('EmailJS not configured — skipping email receipt.');
+                return;
+            }
+
+            const dateStr = new Date().toLocaleString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            try {
+                await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                    customer_name:  bookingData.name,
+                    customer_email: bookingData.email,
+                    phone:          bookingData.phone,
+                    vehicle:        bookingData.vehicle,
+                    service:        bookingData.service,
+                    amount:         '₹' + bookingData.amount.toLocaleString('en-IN'),
+                    payment_id:     bookingData.paymentId || 'N/A',
+                    date:           dateStr,
+                    to_email:       bookingData.email
+                });
+                console.log('✅ Email receipt sent to', bookingData.email);
+            } catch (err) {
+                console.error('❌ Email send failed:', err);
+                // Don't alert the user — payment is already successful
+            }
+        }
+
+        /* ── Service Prices ── */
+        const PRICES = {
+            "Denting": 2500,
+            "Painting": 8000,
+            "Engine Tuning": 5000,
+            "Performance Mods": 15000
+        };
+
+        /* ── Update amount display when service changes ── */
+        window.updateAmount = function () {
+            const serviceEl = document.getElementById('service');
+            const selectedOption = serviceEl.options[serviceEl.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            const amountDisplay = document.getElementById('amount-display');
+            const payBtn = document.getElementById('pay-btn');
+
+            if (price) {
+                document.getElementById('display-amount').textContent = '₹' + parseInt(price).toLocaleString('en-IN');
+                amountDisplay.style.display = 'flex';
+                payBtn.style.display = 'block';
+            } else {
+                amountDisplay.style.display = 'none';
+                payBtn.style.display = 'none';
+            }
+        };
+
+        /* ── Validate Fields ── */
+        function getFormData() {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const vehicle = document.getElementById('vehicle').value.trim();
+            const serviceEl = document.getElementById('service');
+            const service = serviceEl.value;
+            const price = PRICES[service] || 0;
+            const preferredDate = document.getElementById('preferred-date').value;
+
+            if (!name || !email || !phone || !vehicle || !service || !preferredDate) {
+                alert('Please fill in all fields before proceeding.');
+                return null;
+            }
+            if (!/^\d{10}$/.test(phone)) {
+                alert('Please enter a valid 10-digit phone number.');
+                return null;
+            }
+            // Validate date is not in the past
+            const selectedDate = new Date(preferredDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate < today) {
+                alert('Please select a date that is today or later.');
+                return null;
+            }
+            return { name, email, phone, vehicle, service, price, preferredDate };
+        }
+
+        /* ── Razorpay Integration ── */
+        window.initiateRazorpay = async function () {
+            const data = getFormData();
+            if (!data) return;
+
+            // Check if Razorpay SDK loaded successfully
+            if (typeof Razorpay === 'undefined') {
+                alert('Payment gateway is loading. Please wait a moment and try again.\n\nIf the issue persists, try refreshing the page or use "Submit Without Payment".');
+                console.error('Razorpay SDK not loaded. Check if the script tag is correct and you have internet connectivity.');
+                return;
+            }
+
+            const overlay = document.getElementById('processing-overlay');
+            overlay.classList.add('visible');
+            overlay.querySelector('.processing-text').textContent = 'Generating Secure Payment...';
+
+            let orderData = null;
+            try {
+                const res = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: data.price * 100,
+                        currency: 'INR',
+                        receipt: 'rcpt_' + Date.now()
+                    })
+                });
+                orderData = await res.json();
+                if (!res.ok) {
+                    let errMsg = 'Failed to create payment order';
+                    if (orderData.error) {
+                       errMsg = typeof orderData.error === 'string' 
+                            ? orderData.error 
+                            : orderData.error.description || orderData.error.message || JSON.stringify(orderData.error);
+                    }
+                    throw new Error(errMsg);
+                }
+            } catch (err) {
+                overlay.classList.remove('visible');
+                console.error(err);
+                alert('Could not initialize payment secure session: ' + err.message);
+                return;
+            }
+
+            overlay.classList.remove('visible');
+            overlay.querySelector('.processing-text').textContent = 'Saving Booking...';
+
+            const options = {
+                key: 'rzp_test_ShBjL7V3Y3Ogpl',         // Razorpay Key ID
+                amount: data.price * 100,                  // Amount in paise
+                currency: 'INR',
+                order_id: orderData.id,                    // Required for new accounts
+                name: 'HD Motors',
+                description: data.service + ' — ' + data.vehicle,
+                image: '',                                  // Add logo URL if available
+                prefill: {
+                    name: data.name,
+                    email: data.email,
+                    contact: '+91' + data.phone
+                },
+                theme: {
+                    color: '#e63946'
+                },
+                modal: {
+                    ondismiss: function () {
+                        console.log('Payment popup closed by user.');
+                    },
+                    escape: true,
+                    confirm_close: true
+                },
+                retry: {
+                    enabled: true,
+                    max_count: 3
+                },
+                handler: async function (response) {
+                    // Called on successful payment
+                    const overlay = document.getElementById('processing-overlay');
+                    overlay.classList.add('visible');
+
+                    const bookingData = {
+                        name: data.name,
+                        email: data.email,
+                        phone: data.phone,
+                        vehicle: data.vehicle,
+                        service: data.service,
+                        amount: data.price,
+                        preferredDate: data.preferredDate,
+                        paymentId: response.razorpay_payment_id,
+                        paymentStatus: 'Paid',
+                        status: 'Pending',
+                        timestamp: new Date().toISOString()
+                    };
+
+                    try {
+                        await addDoc(collection(db, 'bookings'), bookingData);
+
+                        // Auto-send email receipt
+                        await sendEmailReceipt(bookingData);
+
+                        overlay.classList.remove('visible');
+                        showReceipt(bookingData);
+                    } catch (err) {
+                        overlay.classList.remove('visible');
+                        alert('Payment was successful but there was a database error. Your payment ID is: ' + response.razorpay_payment_id + '\n\nPlease save this ID and contact us. Error: ' + err.message);
+                        console.error(err);
+                    }
+                }
+            };
+
+            try {
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', function (response) {
+                    console.error('Payment failed:', response.error);
+                    alert('Payment failed: ' + response.error.description + '\nCode: ' + response.error.code + '\nReason: ' + response.error.reason);
+                });
+                rzp.open();
+            } catch (err) {
+                console.error('Razorpay initialization error:', err);
+                alert('Unable to open payment gateway. Error: ' + err.message + '\n\nPlease try refreshing the page or use "Submit Without Payment".');
+            }
+        };
+
+        /* ── Show Receipt ── */
+        window.showReceipt = function (data) {
+            document.getElementById('receipt-payment-id').textContent = data.paymentId || 'N/A';
+            document.getElementById('receipt-name').textContent = data.name;
+            document.getElementById('receipt-email').textContent = data.email;
+            document.getElementById('receipt-phone').textContent = data.phone || '—';
+            document.getElementById('receipt-vehicle').textContent = data.vehicle;
+            document.getElementById('receipt-service').textContent = data.service;
+            document.getElementById('receipt-amount').textContent = '₹' + data.amount.toLocaleString('en-IN');
+            // Show preferred date
+            if (data.preferredDate) {
+                const pd = new Date(data.preferredDate);
+                document.getElementById('receipt-preferred-date').textContent = pd.toLocaleDateString('en-IN', {
+                    day: '2-digit', month: 'short', year: 'numeric'
+                });
+            } else {
+                document.getElementById('receipt-preferred-date').textContent = '—';
+            }
+            document.getElementById('receipt-date').textContent = new Date().toLocaleString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            document.getElementById('receipt-modal').classList.add('visible');
+        };
+
+        window.printReceipt = function () {
+            window.print();
+        };
+
+        window.closeReceipt = function () {
+            document.getElementById('receipt-modal').classList.remove('visible');
+            window.location.href = 'index.html';
+        };
+
+        /* ── Submit Without Payment ── */
+        window.handleBookingNoPayment = async function () {
+            const data = getFormData();
+            if (!data) return;
+
+            const overlay = document.getElementById('processing-overlay');
+            overlay.classList.add('visible');
+
+            try {
+                const bookingData = {
+                    name: data.name,
+                    email: data.email,
+                    phone: data.phone,
+                    vehicle: data.vehicle,
+                    service: data.service,
+                    amount: data.price,
+                    preferredDate: data.preferredDate,
+                    paymentStatus: 'Pending',
+                    status: 'Pending',
+                    timestamp: new Date().toISOString()
+                };
+
+                await addDoc(collection(db, 'bookings'), bookingData);
+
+                // Send confirmation email (even without payment)
+                await sendEmailReceipt({ ...bookingData, paymentId: 'Pending Payment' });
+
+                overlay.classList.remove('visible');
+                alert('Booking submitted! A confirmation has been sent to your email. We will contact you for payment.');
+                window.location.href = 'index.html';
+            } catch (err) {
+                overlay.classList.remove('visible');
+                alert('Database Error: ' + err.message);
+                console.error(err);
+            }
+        };
+
+        /* ── UI ── */
+        window.toggleMenu = () => document.getElementById('nav-menu').classList.toggle('active');
+        window.openLoginModal = () => document.getElementById('login-modal').classList.add('visible');
+        window.closeLoginModal = () => document.getElementById('login-modal').classList.remove('visible');
+
+        window.handleOwnerLogin = async (e) => {
+            e.preventDefault();
+            try {
+                await signInWithEmailAndPassword(auth, document.getElementById('adminEmail').value, document.getElementById('adminPassword').value);
+                window.location.href = 'admin.html';
+            } catch (err) { alert('Access Denied'); }
+        };
+    </script>
+</body>
+</html>

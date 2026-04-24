@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment History - HD Motors</title>
+    <meta name="description" content="Track your booking and payment history at HD Motors. View receipts, payment status, and service details.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d0d0d;
+            --accent-color: #e63946;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --card-bg: #1a1a1a;
+            --input-bg: #222;
+            --success: #22c55e;
+            --border-color: #2a2a2a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, .brand { font-family: 'Orbitron', sans-serif; text-transform: uppercase; }
+
+        /* ── Header ── */
+        header {
+            background: rgba(13, 13, 13, 0.95);
+            padding: 20px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            backdrop-filter: blur(10px);
+        }
+        .brand { font-size: 1.8rem; font-weight: 900; color: var(--accent-color); text-decoration: none; }
+        nav { display: flex; gap: 20px; }
+        nav a { color: var(--text-main); text-decoration: none; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; transition: color 0.3s ease; position: relative; }
+        nav a:hover, nav a.active { color: var(--accent-color); }
+        nav a.active::after { content: ''; position: absolute; bottom: -5px; left: 0; width: 100%; height: 2px; background: var(--accent-color); }
+        .menu-toggle { display: none; cursor: pointer; font-size: 1.5rem; color: var(--accent-color); }
+
+        /* ── Page Header ── */
+        .page-header {
+            padding: 80px 5% 50px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+            background: linear-gradient(180deg, rgba(230,57,70,0.08) 0%, rgba(13,13,13,1) 100%);
+        }
+        .page-header h1 { font-size: 2.8rem; margin-bottom: 10px; letter-spacing: 2px; }
+        .page-header p { color: var(--text-muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto; }
+
+        /* ── Search Section ── */
+        .search-section {
+            max-width: 700px;
+            margin: -30px auto 0;
+            padding: 0 5%;
+            position: relative;
+            z-index: 10;
+        }
+
+        .search-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .search-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            background: #111;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .search-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            letter-spacing: 1px;
+        }
+
+        .search-tab.active {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        .search-tab:hover:not(.active) {
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            gap: 12px;
+        }
+
+        .search-input-wrapper input {
+            flex: 1;
+            padding: 14px 18px;
+            background: var(--input-bg);
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 6px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input-wrapper input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .btn-search {
+            padding: 14px 28px;
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .btn-search:hover {
+            background: #c92a36;
+            box-shadow: 0 0 20px rgba(230,57,70,0.4);
+        }
+
+        .search-hint {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ── Results Section ── */
+        .results-section {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 5%;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-header h2 {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+
+        .results-count {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: #111;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #333;
+        }
+
+        /* ── Booking Cards ── */
+        .booking-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: slideUp 0.4s ease-out both;
+        }
+
+        .booking-card:hover {
+            border-color: #444;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            transform: translateY(-2px);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: #111;
+        }
+
+        .card-id {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: var(--accent-color);
+            letter-spacing: 1px;
+        }
+
+        .card-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .card-body {
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .card-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .card-field .field-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .card-field .field-value {
+            font-size: 0.95rem;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .card-field .field-value.service {
+            color: var(--accent-color);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.3);
+        }
+
+        .payment-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* ── Status Badges ── */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge::before { content: '●'; font-size: 0.5rem; }
+
+        .status-badge.paid {
+            background: rgba(34,197,94,0.12);
+            border: 1px solid rgba(34,197,94,0.3);
+            color: var(--success);
+        }
+
+        .status-badge.pending-pay {
+            background: rgba(245,158,11,0.12);
+            border: 1px solid rgba(245,158,11,0.3);
+            color: #f59e0b;
+        }
+
+        .status-badge.status-pending {
+            background: rgba(245,158,11,0.12);
+            border: 1px solid rgba(245,158,11,0.3);
+            color: #f59e0b;
+        }
+
+        .status-badge.status-confirmed {
+            background: rgba(16,185,129,0.12);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: #10b981;
+        }
+
+        .status-badge.status-completed {
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.3);
+            color: #3b82f6;
+        }
+
+        .status-badge.status-cancelled {
+            background: rgba(230,57,70,0.12);
+            border: 1px solid rgba(230,57,70,0.3);
+            color: #e63946;
+        }
+
+        .amount-tag {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .payment-id-tag {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        /* ── Empty & Loading States ── */
+        .state-message {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+        }
+
+        .state-message .state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .state-message h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .state-message p {
+            font-size: 0.95rem;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* ── Loading Spinner ── */
+        .loading-spinner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 60px;
+            gap: 16px;
+        }
+
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #333;
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            color: var(--accent-color);
+        }
+
+        /* ── Summary Stats ── */
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .summary-item {
+            background: #111;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .summary-item .sum-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+
+        .summary-item .sum-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* ── Footer ── */
+        footer {
+            background: #000;
+            padding: 30px 5%;
+            text-align: center;
+            border-top: 1px solid #333;
+            margin-top: auto;
+        }
+        footer p { color: var(--text-muted); font-size: 0.9rem; margin-top: 10px; }
+
+        /* ── Print Receipt ── */
+        .btn-print-receipt {
+            padding: 6px 14px;
+            background: none;
+            border: 1px solid #444;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            font-family: 'Roboto', sans-serif;
+        }
+        .btn-print-receipt:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; }
+            nav {
+                display: none; width: 100%; position: absolute; top: 100%; left: 0;
+                background: rgba(13,13,13,0.98); flex-direction: column;
+                padding: 20px; border-bottom: 1px solid #333;
+            }
+            nav.active { display: flex; }
+            .page-header h1 { font-size: 1.8rem; }
+            .card-body { grid-template-columns: 1fr; }
+            .search-input-wrapper { flex-direction: column; }
+            .card-footer { flex-direction: column; gap: 12px; align-items: flex-start; }
+        }
+
+        @media print {
+            body > *:not(.print-receipt-area) { display: none !important; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="index.html" class="brand">HD Motors</a>
+        <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+        <nav id="nav-menu">
+            <a href="index.html">Home</a>
+            <a href="services.html">Services</a>
+            <a href="projects.html">Projects</a>
+            <a href="booking.html">Booking</a>
+            <a href="history.html" class="active">History</a>
+        </nav>
+    </header>
+
+    <section class="page-header">
+        <h1>Payment History</h1>
+        <p>Track all your bookings, payments, and service status in one place.</p>
+    </section>
+
+    <!-- Search -->
+    <section class="search-section">
+        <div class="search-card">
+            <div class="search-tabs">
+                <button class="search-tab active" id="tab-email" onclick="switchTab('email')">📧 By Email</button>
+                <button class="search-tab" id="tab-phone" onclick="switchTab('phone')">📱 By Phone</button>
+            </div>
+            <div class="search-input-wrapper">
+                <input type="email" id="search-input" placeholder="Enter your email address" autocomplete="email">
+                <button class="btn-search" id="btn-search" onclick="searchBookings()">Search</button>
+            </div>
+            <div class="search-hint">🔒 Your data is securely queried — we never store search history.</div>
+        </div>
+    </section>
+
+    <!-- Results -->
+    <section class="results-section" id="results-section" style="display:none;">
+        <div id="summary-area"></div>
+        <div class="results-header">
+            <h2 id="results-title">Your Bookings</h2>
+            <span class="results-count" id="results-count"></span>
+        </div>
+        <div id="results-container"></div>
+    </section>
+
+    <!-- Initial State -->
+    <section class="results-section" id="initial-state">
+        <div class="state-message">
+            <div class="state-icon">🔍</div>
+            <h3>Look Up Your Bookings</h3>
+            <p>Enter your email or phone number above to view your complete booking and payment history.</p>
+        </div>
+    </section>
+
+    <footer>
+        <a href="index.html" class="brand">HD Motors</a>
+        <p>Managed by Hasan Shaikh. &copy; 2024 All Rights Reserved.</p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where }
+            from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmnchwnfxmGXIKqo9lzmxMVPJS5O6KolU",
+            authDomain: "hd-motord.firebaseapp.com",
+            projectId: "hd-motord",
+            storageBucket: "hd-motord.firebasestorage.app",
+            messagingSenderId: "652034677678",
+            appId: "1:652034677678:web:3f9145a47891eda1b3463f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentSearchType = 'email';
+
+        /* ── Tab Switching ── */
+        window.switchTab = function (type) {
+            currentSearchType = type;
+            const input = document.getElementById('search-input');
+            document.getElementById('tab-email').classList.toggle('active', type === 'email');
+            document.getElementById('tab-phone').classList.toggle('active', type === 'phone');
+
+            if (type === 'email') {
+                input.type = 'email';
+                input.placeholder = 'Enter your email address';
+            } else {
+                input.type = 'tel';
+                input.placeholder = 'Enter your 10-digit phone number';
+            }
+            input.value = '';
+            input.focus();
+        };
+
+        /* ── Search Bookings ── */
+        window.searchBookings = async function () {
+            const input = document.getElementById('search-input').value.trim();
+
+            if (!input) {
+                alert('Please enter your ' + currentSearchType + ' to search.');
+                return;
+            }
+
+            if (currentSearchType === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input)) {
+                alert('Please enter a valid email address.');
+                return;
+            }
+
+            if (currentSearchType === 'phone' && !/^\d{10}$/.test(input)) {
+                alert('Please enter a valid 10-digit phone number.');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('initial-state').style.display = 'none';
+            const resultsSection = document.getElementById('results-section');
+            resultsSection.style.display = 'block';
+            document.getElementById('results-container').innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Searching records...</div>
+                </div>`;
+            document.getElementById('summary-area').innerHTML = '';
+            document.getElementById('results-count').textContent = '';
+
+            try {
+                const field = currentSearchType === 'email' ? 'email' : 'phone';
+                const q = query(collection(db, 'bookings'), where(field, '==', input));
+                const snap = await getDocs(q);
+
+                const bookings = [];
+                snap.forEach(d => bookings.push({ id: d.id, ...d.data() }));
+
+                // Sort by timestamp descending
+                bookings.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+                if (bookings.length === 0) {
+                    document.getElementById('results-container').innerHTML = `
+                        <div class="state-message">
+                            <div class="state-icon">📭</div>
+                            <h3>No Bookings Found</h3>
+                            <p>We couldn't find any bookings associated with this ${currentSearchType}. Please check and try again.</p>
+                        </div>`;
+                    document.getElementById('results-count').textContent = '0 results';
+                    return;
+                }
+
+                // Render summary
+                renderSummary(bookings);
+
+                // Render cards
+                document.getElementById('results-count').textContent = bookings.length + ' booking' + (bookings.length > 1 ? 's' : '');
+                document.getElementById('results-title').textContent = 'Your Bookings';
+                document.getElementById('results-container').innerHTML = bookings.map((b, i) => renderBookingCard(b, i)).join('');
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('results-container').innerHTML = `
+                    <div class="state-message">
+                        <div class="state-icon">⚠️</div>
+                        <h3>Something Went Wrong</h3>
+                        <p>Unable to fetch records. Please try again later.</p>
+                    </div>`;
+            }
+        };
+
+        /* ── Render Summary Stats ── */
+        function renderSummary(bookings) {
+            const totalSpent = bookings.filter(b => b.paymentStatus === 'Paid').reduce((sum, b) => sum + (b.amount || 0), 0);
+            const paidCount = bookings.filter(b => b.paymentStatus === 'Paid').length;
+            const pendingCount = bookings.filter(b => (b.status || 'Pending') === 'Pending').length;
+
+            document.getElementById('summary-area').innerHTML = `
+                <div class="summary-strip">
+                    <div class="summary-item">
+                        <div class="sum-value">${bookings.length}</div>
+                        <div class="sum-label">Total Bookings</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="sum-value">₹${totalSpent.toLocaleString('en-IN')}</div>
+                        <div class="sum-label">Total Paid</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="sum-value">${paidCount}</div>
+                        <div class="sum-label">Payments Made</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="sum-value">${pendingCount}</div>
+                        <div class="sum-label">Pending</div>
+                    </div>
+                </div>`;
+        }
+
+        /* ── Render a Booking Card ── */
+        function renderBookingCard(b, index) {
+            const date = b.timestamp
+                ? new Date(b.timestamp).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : 'N/A';
+
+            const paymentStatus = b.paymentStatus || 'Pending';
+            const bookingStatus = b.status || 'Pending';
+            const payClass = paymentStatus === 'Paid' ? 'paid' : 'pending-pay';
+            const statusClass = 'status-' + bookingStatus.toLowerCase();
+            const paymentId = b.paymentId || '—';
+
+            return `
+                <div class="booking-card" style="animation-delay: ${index * 0.08}s">
+                    <div class="card-top">
+                        <span class="card-id">Booking #${b.id.substring(0, 8).toUpperCase()}</span>
+                        <span class="card-date">${date}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-field">
+                            <span class="field-label">Customer</span>
+                            <span class="field-value">${b.name || '—'}</span>
+                        </div>
+                        <div class="card-field">
+                            <span class="field-label">Vehicle</span>
+                            <span class="field-value">${b.vehicle || '—'}</span>
+                        </div>
+                        <div class="card-field">
+                            <span class="field-label">Service</span>
+                            <span class="field-value service">${b.service || '—'}</span>
+                        </div>
+                        <div class="card-field">
+                            <span class="field-label">Service Date</span>
+                            <span class="field-value" style="color: #fff; font-weight: bold;">${b.preferredDate ? new Date(b.preferredDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</span>
+                        </div>
+                        <div class="card-field">
+                            <span class="field-label">Booking Status</span>
+                            <span class="status-badge ${statusClass}">${bookingStatus}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="payment-info">
+                            <span class="status-badge ${payClass}">${paymentStatus}</span>
+                            ${paymentId !== '—' ? `<span class="payment-id-tag">ID: ${paymentId}</span>` : ''}
+                        </div>
+                        <span class="amount-tag">₹${(b.amount || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                </div>`;
+        }
+
+        /* ── Enter key to search ── */
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') window.searchBookings();
+        });
+
+        /* ── UI ── */
+        window.toggleMenu = () => document.getElementById('nav-menu').classList.toggle('active');
+    </script>
+</body>
+
+</html>

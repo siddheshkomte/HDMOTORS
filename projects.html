@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projects - HD Motors</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+--bg-color:#0d0d0d;
+--accent-color:#e63946;
+--text-main:#ffffff;
+--text-muted:#94a3b8;
+--card-bg:#1a1a1a;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:'Roboto',sans-serif;
+background-color:var(--bg-color);
+color:var(--text-main);
+line-height:1.6;
+display:flex;
+flex-direction:column;
+min-height:100vh;
+}
+
+h1,h2,h3,.brand{
+font-family:'Orbitron',sans-serif;
+text-transform:uppercase;
+}
+
+header{
+background:rgba(13,13,13,0.95);
+padding:20px 5%;
+position:sticky;
+top:0;
+z-index:1000;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #333;
+}
+
+.brand{
+font-size:1.8rem;
+font-weight:900;
+color:var(--accent-color);
+text-decoration:none;
+}
+
+nav{
+display:flex;
+gap:20px;
+}
+
+nav a{
+color:var(--text-main);
+text-decoration:none;
+font-family:'Orbitron',sans-serif;
+font-size:0.9rem;
+transition:color 0.3s ease;
+position:relative;
+}
+
+nav a:hover,
+nav a.active{
+color:var(--accent-color);
+}
+
+nav a.active::after{
+content:'';
+position:absolute;
+bottom:-5px;
+left:0;
+width:100%;
+height:2px;
+background:var(--accent-color);
+}
+
+.menu-toggle{
+display:none;
+cursor:pointer;
+font-size:1.5rem;
+color:var(--accent-color);
+}
+
+.page-header{
+padding:80px 5% 40px;
+text-align:center;
+border-bottom:1px solid #333;
+background:linear-gradient(180deg,rgba(230,57,70,0.1)0%,rgba(13,13,13,1)100%);
+}
+
+.page-header h1{
+font-size:3rem;
+margin-bottom:10px;
+}
+
+.page-header p{
+color:var(--text-muted);
+font-size:1.1rem;
+}
+
+.portfolio-section{
+padding:60px 5%;
+}
+
+.projects-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(350px,1fr));
+gap:40px;
+}
+
+.project-card{
+background:var(--card-bg);
+border-radius:5px;
+overflow:hidden;
+border:1px solid #333;
+transition:transform 0.4s ease,box-shadow 0.4s ease;
+}
+
+.project-card:hover{
+transform:translateY(-10px);
+box-shadow:0 15px 40px rgba(0,0,0,0.6);
+}
+
+.project-img{
+width:100%;
+height:250px;
+background-color:#222;
+position:relative;
+}
+
+.project-img img{
+width:100%;
+height:100%;
+object-fit:cover;
+opacity:0.85;
+}
+
+.badge{
+position:absolute;
+top:15px;
+right:15px;
+padding:5px 12px;
+font-family:'Orbitron',sans-serif;
+font-size:0.75rem;
+font-weight:700;
+border-radius:3px;
+text-transform:uppercase;
+}
+
+.badge.completed{
+background:#2a9d8f;
+color:#fff;
+}
+
+.badge.ongoing{
+background:#fca311;
+color:#000;
+}
+
+.project-info{
+padding:25px;
+}
+
+.project-info h3{
+font-size:1.5rem;
+margin-bottom:10px;
+}
+
+.project-info p{
+color:var(--text-muted);
+font-size:0.95rem;
+}
+
+footer{
+background:#000;
+padding:30px 5%;
+text-align:center;
+border-top:1px solid #333;
+margin-top:auto;
+}
+
+footer p{
+color:var(--text-muted);
+font-size:0.9rem;
+margin-top:10px;
+}
+
+footer .brand{
+font-size:1.2rem;
+}
+
+@media(max-width:768px){
+
+.menu-toggle{
+display:block;
+}
+
+nav{
+display:none;
+width:100%;
+position:absolute;
+top:100%;
+left:0;
+background:rgba(13,13,13,0.98);
+flex-direction:column;
+padding:20px;
+border-bottom:1px solid #333;
+}
+
+nav.active{
+display:flex;
+}
+
+.page-header h1{
+font-size:2rem;
+}
+
+.projects-grid{
+grid-template-columns:1fr;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<a href="index.html" class="brand">HD Motors</a>
+
+<div class="menu-toggle" onclick="toggleMenu()">☰</div>
+
+<nav id="nav-menu">
+<a href="index.html">Home</a>
+<a href="services.html">Services</a>
+<a href="projects.html" class="active">Projects</a>
+<a href="booking.html">Booking</a>
+<a href="history.html">History</a>
+</nav>
+
+</header>
+
+<main>
+
+<section class="page-header">
+<h1>Portfolio</h1>
+<p>A showcase of raw power and refined aesthetics crafted by our team.</p>
+</section>
+
+<section class="portfolio-section">
+
+<div class="projects-grid" id="projects-container"></div>
+
+</section>
+
+</main>
+
+<footer>
+
+<a href="index.html" class="brand">HD Motors</a>
+
+<p>Managed by Hasan Shaikh. © 2024 All Rights Reserved.</p>
+
+</footer>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCmnchwnfxmGXIKqo9lzmxMVPJS5O6KolU",
+  authDomain: "hd-motord.firebaseapp.com",
+  projectId: "hd-motord",
+  storageBucket: "hd-motord.firebasestorage.app",
+  messagingSenderId: "652034677678",
+  appId: "1:652034677678:web:25d5d73b207b199ab3463f",
+  measurementId: "G-TRM0J2GL99"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const container = document.getElementById("projects-container");
+
+const projectsRef = ref(db, "projects");
+
+onValue(projectsRef, (snapshot) => {
+
+  container.innerHTML = "";
+
+  const data = snapshot.val();
+
+  for (let key in data) {
+
+    const project = data[key];
+
+    const card = `
+    <div class="project-card">
+        <div class="project-img">
+            <img src="${project.image}" alt="${project.title}">
+            <span class="badge ${project.status}">
+                ${project.status}
+            </span>
+        </div>
+
+        <div class="project-info">
+            <h3>${project.title}</h3>
+            <p>${project.description}</p>
+        </div>
+    </div>
+    `;
+
+    container.innerHTML += card;
+  }
+
+});
+
+</script>
+
+</body>
+</html>
